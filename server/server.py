@@ -1,4 +1,32 @@
-import socket
+import struct
+
+def enviar_msg(sock, mensagem_texto):
+    """Codifica a string, calcula o tamanho e envia o cabeçalho + dados."""
+    dados = mensagem_texto.encode('utf-8')
+    tamanho = len(dados)
+    # '!I' significa: formato de rede (Big-Endian), Inteiro Não-Sinalizado de 4 bytes
+    cabecalho = struct.pack('!I', tamanho)
+    sock.sendall(cabecalho + dados)
+
+def receber_msg(sock):
+    """Lê os 4 bytes do cabeçalho para saber o tamanho exato e depois lê o bloco completo."""
+    # Recebe o cabeçalho de 4 bytes
+    cabecalho = sock.recv(4)
+    if not cabecalho:
+        return None
+    
+    tamanho = struct.unpack('!I', cabecalho)[0]
+    
+    # Loop para garantir que recebemos TODOS os bytes da mensagem
+    dados = b""
+    while len(dados) < tamanho:
+        pacote = sock.recv(tamanho - len(dados))
+        if not pacote:
+            return None
+        dados += pacote
+        
+    return dados.decode('utf-8', errors='replace')
+    import socket
 
 def iniciar_servidor(host='0.0.0.0', port=5003):
     # Cria o socket TCP
